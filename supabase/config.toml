@@ -1,0 +1,16 @@
+# Supabase project configuration
+project_id = "online-tuition-registration"
+
+[api]
+port = 54321
+schemas = ["public", "storage"]
+
+[db]
+port = 54322
+
+[storage]
+enabled = true
+file_size_limit = "500KiB"
+
+[functions.register-student]
+verify_jwt = false

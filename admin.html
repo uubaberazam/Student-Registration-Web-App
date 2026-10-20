@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Online Tuition Academy - Administrator Management Portal">
+  <title>Admin Portal | Online Tuition Academy</title>
+  
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Supabase Official JavaScript Client SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* Admin-specific style enhancements */
+    .admin-wrapper {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 30px 20px 60px;
+      width: 100%;
+    }
+
+    .admin-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--color-white);
+      padding: 16px 24px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-neutral-200);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .admin-nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .admin-nav-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-badge {
+      font-size: 0.8125rem;
+      background-color: var(--color-primary-50);
+      color: var(--color-primary-800);
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      font-weight: 600;
+    }
+
+    .btn-logout {
+      background-color: var(--color-white);
+      border: 1px solid var(--color-neutral-300);
+      color: var(--color-neutral-700);
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .btn-logout:hover {
+      background-color: var(--color-error-50);
+      border-color: #FECACA;
+      color: var(--color-error-600);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background-color: var(--color-white);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-neutral-200);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .stat-label {
+      font-size: 0.8125rem;
+      color: var(--color-neutral-500);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-size: 1.875rem;
+      font-weight: 800;
+      color: var(--color-primary-900);
+    }
+
+    /* Filter & Search Bar */
+    .toolbar-card {
+      background-color: var(--color-white);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-neutral-200);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .toolbar-left {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      flex: 1;
+      min-width: 280px;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .toolbar-input {
+      height: 42px;
+      padding: 8px 14px 8px 36px;
+      border: 1.5px solid var(--color-neutral-300);
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      width: 100%;
+    }
+
+    .toolbar-select {
+      height: 42px;
+      padding: 8px 32px 8px 12px;
+      border: 1.5px solid var(--color-neutral-300);
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      background-color: var(--color-white);
+      cursor: pointer;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-toolbar {
+      height: 42px;
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all var(--transition-fast);
+    }
+
+    .btn-export {
+      background-color: #ECFDF5;
+      color: #047857;
+      border: 1px solid #A7F3D0;
+    }
+
+    .btn-export:hover {
+      background-color: #D1FAE5;
+    }
+
+    .btn-refresh {
+      background-color: var(--color-white);
+      border: 1px solid var(--color-neutral-300);
+      color: var(--color-neutral-700);
+    }
+
+    .btn-refresh:hover {
+      background-color: var(--color-neutral-100);
+    }
+
+    /* Registrations Table */
+    .table-container {
+      background-color: var(--color-white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-neutral-200);
+      box-shadow: var(--shadow-sm);
+      overflow-x: auto;
+    }
+
+    .registrations-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.875rem;
+    }
+
+    .registrations-table th {
+      background-color: var(--color-neutral-50);
+      color: var(--color-neutral-600);
+      font-weight: 600;
+      padding: 14px 18px;
+      border-bottom: 1.5px solid var(--color-neutral-200);
+      white-space: nowrap;
+    }
+
+    .registrations-table td {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--color-neutral-200);
+      vertical-align: middle;
+    }
+
+    .registrations-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .registrations-table tr:hover td {
+      background-color: #F8FAFC;
+    }
+
+    .student-photo-thumb {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-sm);
+      object-fit: cover;
+      background-color: var(--color-neutral-200);
+      border: 1px solid var(--color-neutral-300);
+    }
+
+    .student-name-cell {
+      font-weight: 700;
+      color: var(--color-neutral-900);
+    }
+
+    .student-father-cell {
+      font-size: 0.8125rem;
+      color: var(--color-neutral-500);
+    }
+
+    .phone-cell a {
+      color: var(--color-primary-700);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .phone-cell a:hover {
+      text-decoration: underline;
+    }
+
+    .whatsapp-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background-color: #25D366;
+      color: white;
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-decoration: none;
+      margin-left: 6px;
+    }
+
+    .class-tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 600;
+      background-color: var(--color-primary-50);
+      color: var(--color-primary-700);
+      border: 1px solid var(--color-primary-200);
+    }
+
+    .ref-badge {
+      font-family: monospace;
+      font-weight: 700;
+      font-size: 0.8125rem;
+      color: var(--color-neutral-700);
+      background-color: var(--color-neutral-100);
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+    }
+
+    .empty-state {
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--color-neutral-500);
+    }
+
+    /* Login Form Card */
+    .login-wrapper {
+      max-width: 440px;
+      margin: 60px auto;
+      padding: 0 20px;
+    }
+
+    .login-card {
+      background: var(--color-white);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--color-neutral-200);
+      box-shadow: var(--shadow-card);
+      padding: 36px 32px;
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .login-header h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--color-neutral-900);
+    }
+
+    .login-header p {
+      font-size: 0.875rem;
+      color: var(--color-neutral-500);
+      margin-top: 4px;
+    }
+
+    /* Modal for Full Student View */
+    .photo-modal-img {
+      max-width: 240px;
+      max-height: 240px;
+      border-radius: var(--radius-md);
+      object-fit: cover;
+      margin: 0 auto 16px;
+      display: block;
+      border: 3px solid var(--color-neutral-200);
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+    <!-- Admin Navigation Bar -->
+    <header class="site-header" style="padding-bottom: 12px;">
+      <div class="header-container">
+        <h1 class="academy-title">Academy Administration Portal</h1>
+        <p class="academy-tagline">Secure Management for Student Admissions</p>
+      </div>
+    </header>
+
+    <main class="admin-wrapper">
+      <!-- 1. LOGIN SECTION (Shown when not authenticated) -->
+      <section id="loginSection" class="login-wrapper">
+        <div class="login-card">
+          <div class="login-header">
+            <div class="brand-logo" style="margin: 0 auto 12px;">
+              <svg viewBox="0 0 48 48" width="44" height="44" fill="none">
+                <rect width="48" height="48" rx="12" fill="#1D4ED8"/>
+                <path d="M24 10L6 20L24 30L42 20L24 10Z" fill="#FFFFFF"/>
+                <path d="M13 24.5V33.5C13 36.5 18 39 24 39C30 39 35 36.5 35 33.5V24.5" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <h2>Admin Login</h2>
+            <p>Enter your Supabase administrator credentials</p>
+          </div>
+
+          <div id="loginAlert" class="alert-box alert-error hidden" role="alert">
+            <div class="alert-message" id="loginAlertMessage"></div>
+          </div>
+
+          <form id="adminLoginForm" novalidate>
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label for="adminEmail" class="form-label">Email Address</label>
+              <input type="email" id="adminEmail" class="form-input" style="padding-left: 14px;" placeholder="admin@example.com" required>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 24px;">
+              <label for="adminPassword" class="form-label">Password</label>
+              <input type="password" id="adminPassword" class="form-input" style="padding-left: 14px;" placeholder="••••••••••••" required>
+            </div>
+
+            <button type="submit" id="btnLogin" class="btn-submit" style="max-width: 100%;">
+              Sign In to Admin Portal
+            </button>
+          </form>
+
+          <p class="field-hint" style="text-align: center; margin-top: 18px;">
+            <a href="index.html" style="color: var(--color-primary-700); text-decoration: none; font-weight: 600;">&larr; Back to Public Registration Form</a>
+          </p>
+        </div>
+      </section>
+
+      <!-- 2. DASHBOARD SECTION (Shown when authenticated) -->
+      <section id="dashboardSection" class="hidden">
+        <!-- Top Toolbar -->
+        <div class="admin-nav">
+          <div class="admin-nav-brand">
+            <span class="user-badge" id="adminUserBadge">admin@academy.com</span>
+            <span class="pill" style="margin: 0;">Academy Admin</span>
+          </div>
+          <div class="admin-nav-user">
+            <a href="index.html" class="btn-logout" style="text-decoration: none;">View Student Form</a>
+            <button type="button" class="btn-logout" id="btnLogout">Sign Out</button>
+          </div>
+        </div>
+
+        <!-- Metrics Overview -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">Total Registrations</span>
+            <span class="stat-value" id="statTotalRegistrations">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Registered Today</span>
+            <span class="stat-value" id="statTodayRegistrations">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Unique Classes</span>
+            <span class="stat-value" id="statUniqueClasses">0</span>
+          </div>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="toolbar-card">
+          <div class="toolbar-left">
+            <div class="search-input-wrapper">
+              <input type="search" id="adminSearchInput" class="toolbar-input" placeholder="Search by name, father, phone, or Ref ID...">
+            </div>
+            <select id="adminFilterClass" class="toolbar-select">
+              <option value="">All Classes</option>
+              <option value="Class 1">Class 1</option>
+              <option value="Class 2">Class 2</option>
+              <option value="Class 3">Class 3</option>
+              <option value="Class 4">Class 4</option>
+              <option value="Class 5">Class 5</option>
+              <option value="Class 6">Class 6</option>
+              <option value="Class 7">Class 7</option>
+              <option value="Class 8">Class 8</option>
+              <option value="Class 9">Class 9</option>
+              <option value="Class 10">Class 10</option>
+              <option value="First Year">First Year</option>
+              <option value="Second Year">Second Year</option>
+              <option value="Other">Other Classes</option>
+            </select>
+          </div>
+          <div class="toolbar-actions">
+            <button type="button" class="btn-toolbar btn-export" id="btnExportCsv" title="Export to CSV">
+              <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor">
+                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+              </svg>
+              Export CSV
+            </button>
+            <button type="button" class="btn-toolbar btn-refresh" id="btnRefresh" title="Refresh Table">
+              <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor">
+                <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+              </svg>
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        <!-- Registrations Table -->
+        <div class="table-container">
+          <table class="registrations-table" id="registrationsTable">
+            <thead>
+              <tr>
+                <th>Photo</th>
+                <th>Ref ID</th>
+                <th>Student &amp; Father Name</th>
+                <th>Phone Number</th>
+                <th>Class</th>
+                <th>Registered Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="registrationsTableBody">
+              <tr>
+                <td colspan="7" class="empty-state">Loading registrations...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- Student Details Modal -->
+    <div id="detailsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Student Profile</h3>
+          <button type="button" class="btn-close-modal" id="btnCloseDetailsModal">&times;</button>
+        </div>
+        <div class="modal-body" id="detailsModalBody">
+          <!-- Dynamically filled -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-primary" id="btnDismissDetailsModal">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="footer-container">
+        <p class="footer-copyright">&copy; 2026 Online Tuition Academy. Private Administration Console.</p>
+        <div class="footer-links">
+          <a href="index.html" class="footer-link">Public Registration Portal</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
